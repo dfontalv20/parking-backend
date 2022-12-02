@@ -5,7 +5,7 @@ const parkingRequestSchema = Joi.object({
     personName: Joi.string().required(),
     phone: Joi.number().integer().required(),
     plate: Joi.string().required(),
-    slotId: Joi.number().integer().required(),
+    color: Joi.string().allow(null)
 })
 
 module.exports = parkingRequestSchema

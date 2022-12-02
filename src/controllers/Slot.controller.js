@@ -177,9 +177,10 @@ class SlotController {
     }
 
     validateReservation = async (req = request, res = response, next) => {
-        const { personName, slotId } = req.body
+        const { personName } = req.body
+        const { id } = req.params
         try {
-            const { client } = await Slot.findOne({ where: { id: slotId }, include: [Client] })
+            const { client } = await Slot.findOne({ where: { id }, include: [Client] })
             if (client.name != personName) {
                 return res.status(400).json({
                     error: `Esta plaza esta reservada`
