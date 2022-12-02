@@ -40,10 +40,6 @@ class Application {
     }
 
     setupRoutes() {
-        this.app.get('/', (req, res) => res.send('Hello world'))
-    }
-
-    setupRoutes() {
         this.controllers.forEach(controller => {
             this.app.use(controller.routes())
         })

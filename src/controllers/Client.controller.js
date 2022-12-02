@@ -16,7 +16,7 @@ class ClientController {
         return router
     }
 
-    async getAll(req = this.server.app.request, res = this.server.app.response) {
+    async getAll(req = request, res = response) {
         try {
             res.status(200).json(await Client.findAll())
         } catch (error) {
@@ -47,7 +47,7 @@ class ClientController {
             }
             const client = await Client.findByPk(+id)
             await client.update(req.body)
-            res.status(201).json(client)
+            res.status(200).json(client)
         } catch (error) {
             console.error(error)
             return res.status(500).send()
