@@ -14,7 +14,7 @@ class SlotController {
             .get(this.getAll)
             .post(requestValidation(slotSchema), this.uniqueNumber, this.clientExists, this.create)
         router.route('/slot/:id/occupy')
-            .post(requestValidation(parkingRequestSchema), this.slotExists, this.occupySlot)
+            .post(requestValidation(parkingRequestSchema), this.slotExists, this.validateReservation, this.occupySlot)
         router.route('/slot/:id/vacate')
             .post(this.slotExists, this.vacateSlot)
         router.route('/slot/:id')
@@ -174,6 +174,22 @@ class SlotController {
                 exitDate: null
             },
         }))
+    }
+
+    validateReservation = async (req = request, res = response, next) => {
+        const { personName, slotId } = req.body
+        try {
+            const { client } = await Slot.findOne({ where: { id: slotId }, include: [Client] })
+            if (client.name != personName) {
+                return res.status(400).json({
+                    error: `Esta plaza esta reservada`
+                })
+            }
+            next()
+        } catch (error) {
+            console.error(error)
+            res.status(500).send()
+        }
     }
 }
 
