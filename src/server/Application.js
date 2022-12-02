@@ -1,5 +1,6 @@
 const config = require("../config")
 const express = require("express")
+const cors = require("cors")
 
 class Application {
     app = express()
@@ -21,6 +22,7 @@ class Application {
 
     setupMiddlewares() {
         this.app.use(express.json())
+        this.app.use(cors())
     }
 
     async setupDatabase() {

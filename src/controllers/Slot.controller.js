@@ -23,7 +23,7 @@ class SlotController {
         return router
     }
 
-    async getAll(req = request, res = response) {
+    getAll = async (req = request, res = response) => {
         try {
             let slots = await Slot.findAll({ include: [Client] })
             slots = await Promise.all(slots.map(async (slot) => ({
