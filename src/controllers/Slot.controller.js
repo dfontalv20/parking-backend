@@ -1,7 +1,8 @@
 const { Router, request, response } = require("express")
 const Client = require("../models/Client.model")
+const Movement = require("../models/Movement.model")
 const Slot = require("../models/Slot.model")
-const clientSchema = require("../schemas/Client")
+const parkingRequestSchema = require("../schemas/ParkRequest")
 const slotSchema = require("../schemas/Slot")
 const { requestValidation } = require("../utils/request")
 
@@ -12,6 +13,10 @@ class SlotController {
         router.route('/slot')
             .get(this.getAll)
             .post(requestValidation(slotSchema), this.uniqueNumber, this.clientExists, this.create)
+        router.route('/slot/:id/occupy')
+            .post(requestValidation(parkingRequestSchema), this.slotExists, this.occupySlot)
+        router.route('/slot/:id/vacate')
+            .post(this.slotExists, this.vacateSlot)
         router.route('/slot/:id')
             .put(requestValidation(slotSchema), this.slotExists, this.clientExists, this.update)
             .delete(this.slotExists, this.delete)
@@ -20,7 +25,11 @@ class SlotController {
 
     async getAll(req = request, res = response) {
         try {
-            res.status(200).json(await Slot.findAll())
+            let slots = await Slot.findAll({ include: [Client] })
+            slots = await Promise.all(slots.map(async (slot) => ({
+                ...slot.dataValues, current: (await this.currentParking(slot))?.dataValues ?? null
+            })))
+            res.status(200).json(slots)
         } catch (error) {
             console.error(error)
             return res.status(500).send()
@@ -62,6 +71,24 @@ class SlotController {
             const slot = await Slot.findByPk(+id)
             await slot.destroy(req.body)
             res.status(200).json(slot)
+        } catch (error) {
+            console.error(error)
+            return res.status(500).send()
+        }
+    }
+
+    vacateSlot = async (req = request, res = response) => {
+        try {
+            const slotMovement = await this.currentParking(await Slot.findByPk(+req.params.id))
+            if (!slotMovement) {
+                return res.status(400).json({
+                    error: 'Esta plaza se encuentra desocupada'
+                })
+            }
+            slotMovement.update({
+                exitDate: new Date()
+            })
+            res.status(200).json()
         } catch (error) {
             console.error(error)
             return res.status(500).send()
@@ -115,6 +142,38 @@ class SlotController {
             console.error(error)
             res.status(500).send()
         }
+    }
+
+    occupySlot = async (req = request, res = response) => {
+        try {
+            const isSlotOccuped = await this.currentParking(await Slot.findByPk(+req.params.id)) != null
+            if (isSlotOccuped) {
+                return res.status(400).json({
+                    error: 'Esta plaza se encuentra ocupada'
+                })
+            }
+            const movement = await Movement.create({
+                ...req.body,
+                entryDate: new Date()
+            })
+            res.status(200).json(movement)
+        } catch (error) {
+            console.error(error)
+            return res.status(500).send()
+        }
+    }
+
+    currentParking = async (slot = new Slot()) => {
+        return (await Movement.findOne({
+            order: [
+                ['entryDate', 'DESC']
+            ],
+            where:
+            {
+                slotId: slot.id,
+                exitDate: null
+            },
+        }))
     }
 }
 
