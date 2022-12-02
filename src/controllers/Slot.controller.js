@@ -154,6 +154,7 @@ class SlotController {
             }
             const movement = await Movement.create({
                 ...req.body,
+                slotId: +req.params.id,
                 entryDate: new Date()
             })
             res.status(200).json(movement)
@@ -181,7 +182,7 @@ class SlotController {
         const { id } = req.params
         try {
             const { client } = await Slot.findOne({ where: { id }, include: [Client] })
-            if (client.name != personName) {
+            if (client != null && client.name != personName) {
                 return res.status(400).json({
                     error: `Esta plaza esta reservada`
                 })
